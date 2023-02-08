@@ -1,6 +1,5 @@
 package com.muhardin.endy.belajar.rest.upload;
 
-import java.io.IOException;
 import java.util.Base64;
 
 import org.junit.jupiter.api.Assertions;

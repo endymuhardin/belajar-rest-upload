@@ -7,6 +7,13 @@ import java.nio.file.Paths;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.muhardin.endy.belajar.rest.upload.dto.ImageUploadDto;
 import com.muhardin.endy.belajar.rest.upload.dto.ImageUploadResponseDto;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -51,5 +59,27 @@ public class ImageController {
             return responseDto;
         }
         
+    }
+
+    @GetMapping("/download/{filename:.+}")
+    public ResponseEntity<Resource> downloadImage(@PathVariable String filename, HttpServletRequest request) throws Exception {
+        Path filePath = this.fileStorageLocation.resolve(filename).normalize();
+        Resource resource = new UrlResource(filePath.toUri());
+        if(!resource.exists()) {
+            log.info("File "+filename+" tidak ditemukan");
+            return ResponseEntity.notFound().build();
+        } 
+
+        String contentType = "application/octet-stream";
+        try {
+            contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
+        } catch (IOException ex) {
+            log.info("Could not determine file type.");
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline\"")
+                .body(resource);
     }
 }
